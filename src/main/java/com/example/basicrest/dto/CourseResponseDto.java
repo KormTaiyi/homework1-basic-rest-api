@@ -1,6 +1,9 @@
 package com.example.basicrest.dto;
 
-public record CourseResponse(
+import lombok.Builder;
+
+@Builder
+public record CourseResponseDto(
         String code,
         String title,
         Double price,
