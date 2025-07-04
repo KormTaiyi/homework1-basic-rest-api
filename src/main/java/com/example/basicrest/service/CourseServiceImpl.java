@@ -2,49 +2,74 @@ package com.example.basicrest.service;
 
 import com.example.basicrest.doman.Courses;
 import com.example.basicrest.dto.CourseResponseDto;
+import com.example.basicrest.repository.CourseRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 
-@Service
 @RequiredArgsConstructor
-public class CourseServiceImpl implements CourseService{
-    List<Courses> courses= new ArrayList<>();
-    @Override
+@Service
+public class CourseServiceImpl implements CourseService {
+
+    private final CourseRepository courseRepository;
+
+
     public List<CourseResponseDto> getAllCourses() {
-        return List.of();
+        return mapToDtoList(courseRepository.getCourses());
+    }
+
+    @Override
+    public List<CourseResponseDto> getAllCourses(Boolean status) {
+        List<Courses> courseList = courseRepository.getCourses();
+        if (status != null) {
+            courseList = courseList.stream()
+                    .filter(course -> course.getStatus().equals(status))
+                    .toList();
+        }
+        return mapToDtoList(courseList);
     }
 
     @Override
     public List<CourseResponseDto> getCourses(Boolean status, String title) {
-
-        List <Courses> filterCourses = courses.stream().filter(course->course.getStatus().equals(status) && course.getTitle().contains(title))
-                .map(course -> CourseResponseDto.builder()
-                        .code(course.getCode())
-                        .title(course.getTitle())
-                        .price(course.getPrice())
-                        .status(course.getStatus())
-                        .build())
+        return courseRepository.getCourses().stream()
+                .filter(course -> course.getStatus().equals(status) &&
+                        course.getTitle().toLowerCase().contains(title.toLowerCase()))
+                .map(this::mapToDto)
                 .toList();
-        List<CourseResponseDto> courseResponseList = filterCourses.stream().map(course -> CourseResponseDto.builder()
-                .code(course.getCode())
-                .title(course.getTitle())
-                .price(course.getPrice())
-                .status(course.getStatus())
-                .build()).toList();
-
-        return courseResponseList;
     }
 
     @Override
     public CourseResponseDto getCourseById(String id) {
-        return null;
+        return courseRepository.getCourses().stream()
+                .filter(course -> course.getId().equals(id))
+                .findFirst()
+                .map(this::mapToDto)
+                .orElse(null);
     }
 
     @Override
     public CourseResponseDto getCourseByCode(String code) {
-        return null;
+        return courseRepository.getCourses().stream()
+                .filter(course -> course.getCode().equalsIgnoreCase(code))
+                .findFirst()
+                .map(this::mapToDto)
+                .orElse(null);
+    }
+
+    // === Helper methods ===
+    private CourseResponseDto mapToDto(Courses course) {
+        return CourseResponseDto.builder()
+                .code(course.getCode())
+                .title(course.getTitle())
+                .price(course.getPrice())
+                .status(course.getStatus())
+                .build();
+    }
+
+    private List<CourseResponseDto> mapToDtoList(List<Courses> courseList) {
+        return courseList.stream()
+                .map(this::mapToDto)
+                .toList();
     }
 }
